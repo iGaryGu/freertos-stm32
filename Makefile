@@ -1,4 +1,4 @@
-PROJECT = traffic
+PROJECT =shell
 
 EXECUTABLE = $(PROJECT).elf
 BIN_IMAGE = $(PROJECT).bin
@@ -21,6 +21,9 @@ CFLAGS = -mcpu=$(CPU) -march=armv7e-m -mtune=cortex-m4
 CFLAGS += -mlittle-endian -mthumb
 # Need study
 CFLAGS += -mfpu=fpv4-sp-d16 -mfloat-abi=softfp -O0
+
+#USER NAME
+CFLAGS += -DUSER_NAME=\"$(USER)\"
 
 define get_library_path
     $(shell dirname $(shell $(CC) $(CFLAGS) -print-file-name=$(1)))
@@ -88,10 +91,19 @@ OBJS += \
     $(PWD)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_lcd.o \
     $(PWD)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_ioe.o
 
-# Traffic
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/traffic/draw_graph.o
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/traffic/move_car.o
-CFLAGS += -I $(PWD)/CORTEX_M4F_STM32F4/traffic/include
+# shell 
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/shell.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/clib.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/fio.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/romfs.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/osdebug.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/stm32_p103.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/string-util.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/hash-djb2.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/filesystem.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/host.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/mmtest.o
+CFLAGS += -I $(PWD)/CORTEX_M4F_STM32F4/shell/include
 
 CFLAGS += -DUSE_STDPERIPH_DRIVER
 CFLAGS += -I $(PWD)/CORTEX_M4F_STM32F4 \
