@@ -1,4 +1,4 @@
-PROJECT =shell
+PROJECT = 2048
 
 EXECUTABLE = $(PROJECT).elf
 BIN_IMAGE = $(PROJECT).bin
@@ -89,21 +89,22 @@ OBJS += \
     $(PWD)/Utilities/STM32F429I-Discovery/stm32f429i_discovery.o \
     $(PWD)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_sdram.o \
     $(PWD)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_lcd.o \
-    $(PWD)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_ioe.o
+    $(PWD)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_ioe.o \
+	$(PWD)/Utilities/STM32F429I-Discovery/stm32f429i_discovery_l3gd20.o
 
-# shell 
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/shell.o
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/clib.o
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/fio.o
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/romfs.o
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/osdebug.o
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/stm32_p103.o
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/string-util.o
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/hash-djb2.o
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/filesystem.o
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/host.o
-OBJS += $(PWD)/CORTEX_M4F_STM32F4/shell/mmtest.o
-CFLAGS += -I $(PWD)/CORTEX_M4F_STM32F4/shell/include
+# 2048 
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/2048/game.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/2048/stm32_p103.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/2048/fio.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/2048/clib.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/2048/filesystem.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/2048/hash-djb2.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/2048/host.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/2048/mmtest.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/2048/romfs.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/2048/osdebug.o
+OBJS += $(PWD)/CORTEX_M4F_STM32F4/2048/string-util.o
+CFLAGS += -I $(PWD)/CORTEX_M4F_STM32F4/2048/include
 
 CFLAGS += -DUSE_STDPERIPH_DRIVER
 CFLAGS += -I $(PWD)/CORTEX_M4F_STM32F4 \
@@ -116,6 +117,8 @@ CFLAGS += -I $(PWD)/CORTEX_M4F_STM32F4 \
 	  -I $(PWD)/Utilities/STM32F429I-Discovery
 
 all: $(BIN_IMAGE)
+dbg: $(EXECUTABLE)
+	openocd -f board/stm32f429discovery.cfg 2> /dev/null & arm-none-eabi-gdb $^ -x gdbscript && pkill openocd 2>/dev/null
 
 $(BIN_IMAGE): $(EXECUTABLE)
 	$(OBJCOPY) -O binary $^ $@

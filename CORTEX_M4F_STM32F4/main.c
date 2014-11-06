@@ -7,15 +7,10 @@
 #include "queue.h"
 #include "semphr.h"
 #include <string.h>
-
-/* Filesystem includes */
-#include "filesystem.h"
 #include "fio.h"
-#include "romfs.h"
-
 #include "clib.h"
-#include "shell.h"
-#include "host.h"
+#include "game.h"
+#include "stm32f429i_discovery_lcd.h"
 
 /* _sromfs symbol can be found in main.ld linker script
  * it contains file system structure of test_romfs directory
@@ -85,68 +80,47 @@ char recv_byte()
 	while(!xQueueReceive(serial_rx_queue, &msg, portMAX_DELAY));
 	return msg;
 }
-
-xTaskHandle xHandle = NULL;
-void fib_handler(void *pvParameters){
-	char **argv = (char **)pvParameters;
-	cmdfunc *fptr=do_command(argv[0]);
-	if(fptr!=NULL)
-		fptr(2,argv);
-	else
-		fio_printf(2, "\r\n\"%s\" command not found.\r\n", argv[0]);
-	if(xHandle != NULL)
-		vTaskDelete(xHandle);
+void
+prvInit()
+{
+     //LCD init
+     LCD_Init();
+     IOE_Config();
+     LTDC_Cmd( ENABLE );
+ 
+     LCD_LayerInit();
+     LCD_SetLayer( LCD_FOREGROUND_LAYER );
+     LCD_Clear( LCD_COLOR_BLACK );
+     LCD_SetTextColor( LCD_COLOR_WHITE );
 }
 
-void command_prompt(void *pvParameters)
-{
-	char buf[128];
-	char *argv[20];
-    char hint[] = USER_NAME "@" USER_NAME "-STM32:~$ ";
-	fio_printf(1, "\rWelcome to FreeRTOS Shell\r\n");
 
+
+void Game(void *pvParameter){
+	init();
 	while(1){
-		fio_printf(1, "%s", hint);
-		fio_read(0, buf, 127);
-		int n=parse_command(buf, argv);
-		/* will return pointer to the command function */
-		cmdfunc *fptr=do_command(argv[0]);
-		if(fptr!=NULL)
-			// create a new task for background running to handle the fib_command
-			if(strncmp(argv[0],"fib",4)==0){
-				fio_printf(1,"\r\n");
-				xTaskCreate(fib_handler,(signed portCHAR*)"fib_handler",512,argv,tskIDLE_PRIORITY+1, &xHandle);
-			}
-			else
-				fptr(n, argv);
-		else
-			fio_printf(2, "\r\n\"%s\" command not found.\r\n", argv[0]);
-
+		update();
+		render();
 	}
 }
 
 int main()
 {
+	prvInit();
 	init_rs232();
 	enable_rs232_interrupts();
 	enable_rs232();
 	
 	fs_init();
 	fio_init();
-	
-//	register_romfs("romfs", &_sromfs);
-	
 	/* Create the queue used by the serial task.  Messages for write to
 	 * the RS232. */
 	vSemaphoreCreateBinary(serial_tx_wait_sem);
 	/* Add for serial input 
 	 * Reference: www.freertos.org/a00116.html */
 	serial_rx_queue = xQueueCreate(1, sizeof(char));
-
-	/* Create a task to output text read from romfs. */
-	xTaskCreate(command_prompt,
-	            (signed portCHAR *) "CLI",
-	            512 /* stack size */, NULL, tskIDLE_PRIORITY + 2, NULL);
+	
+	xTaskCreate(Game,(signed portCHAR *)"game",512,NULL,tskIDLE_PRIORITY+2,NULL);
 
 	/* Start running the tasks. */
 	vTaskStartScheduler();
