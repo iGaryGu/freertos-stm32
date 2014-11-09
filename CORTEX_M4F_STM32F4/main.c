@@ -98,10 +98,12 @@ prvInit()
 
 void Game(void *pvParameter){
 	init();
+	blockInit();
 	while(1){
 		update();
 		render();
 	}
+	vTaskDelay(10);
 }
 
 int main()
