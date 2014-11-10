@@ -103,7 +103,6 @@ void Game(void *pvParameter){
 		update();
 		render();
 	}
-	vTaskDelay(10);
 }
 
 int main()

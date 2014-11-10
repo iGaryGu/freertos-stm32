@@ -22,3 +22,6 @@
 *.elf
 *.lst
 *.hex
+
+#swp file
+*.swp

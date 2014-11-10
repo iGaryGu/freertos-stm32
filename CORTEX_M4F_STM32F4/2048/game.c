@@ -72,22 +72,47 @@ void blockInit(){
 void random_gen_block(){
 	int i;
 	int j = 0;
-	int rnd;
-	int n;
+	int k = 0;
+	uint32_t rnd;
+	uint32_t n;
 	int arr[16];
-	int n_x;
-	int n_y;
+	uint32_t n_x;
+	uint32_t n_y;
+	for(i = 0 ; i < 16;i++){
+		arr[i] = 0;
+	}
+	for(i = 0 ; i < 4;i++){
+		for(j = 0 ; j < 4;j++){
+			fio_printf(1,"%d ",block[i][j]);
+		}
+		fio_printf(1,"\r\n");
+	}
+	//find the empty block
+	for(i = 0 ;i < 4;i++){
+		for(j = 0 ; j < 4;j++){
+			if(block[i][j]==0){
+				arr[k] = i*4+j;
+				k++;
+			}
+		}
+	}
+	fio_printf(1,"k = %d\r\n",k);
+	for(i = 0 ; i<16;i++){
+		fio_printf(1,"%d ",arr[i]);
+	}
+	fio_printf(1,"\r\n");
 	//get empty block and init
 	while(!RNG_GetFlagStatus(RNG_FLAG_DRDY));
 	rnd = RNG_GetRandomNumber();
-	n = rnd%16;
-	n_x = n/4;
-	n_y = n%4;
+	n = rnd % k;
+	n_x = arr[n]/4;
+	n_y = arr[n]%4;
+
+	fio_printf(1,"rnd = %d \r\n",rnd);
+	fio_printf(1,"n = %d \r\n",n);
 	fio_printf(1,"n_x = %d n_y = %d \r\n",n_x,n_y);
 	fio_printf(1,"block = %d\r\n",block[n_x][n_y]);
-	if(block[n_x][n_y]==0){
-		block[n_x][n_y] = 2;
-	}
+	block[n_x][n_y] = 2;
 }
 
 void draw_block(){
@@ -104,12 +129,6 @@ void draw_block(){
 					LCD_DisplayChar(j*80+40,i*60+40-prefix*itr,tmp%10+48);
 					tmp/=10;
 					itr++;
-/*				if(block[i][j]>10){
-					LCD_DisplayChar(j*80+40,i*60+15,block[i][j]/10+48);
-					LCD_DisplayChar(j*80+40,i*60+30,block[i][j]%10+48);
-				}else{
-					LCD_DisplayChar(j*80+40,i*60+15,block[i][j]+48);
-				}*/
 				}
 			}
 		}
@@ -127,12 +146,6 @@ void cal_block(int direction){
 	int sum = 0;
 	switch(direction){
 		case 1://down
-			for(int i = 0 ;i < 4;i++){
-				for(int j = 0 ; j < 4;j++){
-					fio_printf(1,"%d ",block[i][j]);
-				}
-				fio_printf(1,"\r\n");
-			}
 			for(i = 0;i<4;i++){
 				for(j = 0;j < 4;j++){
 					if(block[i][j]>0){
@@ -159,15 +172,8 @@ void cal_block(int direction){
 				x = 0;
 				k = 0;
 			}
-			draw_block();
 			break;
 		case 2://up
-			for(int i = 0 ;i < 4;i++){
-				for(int j = 0 ; j < 4;j++){
-					fio_printf(1,"%d ",block[i][j]);
-				}
-				fio_printf(1,"\r\n");
-			}
 			for(i = 0;i<4;i++){
 				for(j = 0;j < 4;j++){
 					if(block[i][j]>0){
@@ -194,16 +200,9 @@ void cal_block(int direction){
 				x = 0;
 				k = 0;
 			}
-			draw_block();
 			break;
 
 		case 3://right
-			for(int i = 0 ;i < 4;i++){
-				for(int j = 0 ; j < 4;j++){
-					fio_printf(1,"%d ",block[i][j]);
-				}
-				fio_printf(1,"\r\n");
-			}
 			for(j = 0;j<4;j++){
 				for(i = 0;i < 4;i++){
 					if(block[i][j]>0){
@@ -230,16 +229,9 @@ void cal_block(int direction){
 				k = 0;
 				x = 0;
 			}
-			draw_block();
 			break;
 
 		case 4://left
-			for(int i = 0 ;i < 4;i++){
-				for(int j = 0 ; j < 4;j++){
-					fio_printf(1,"%d ",block[i][j]);
-				}
-				fio_printf(1,"\r\n");
-			}
 			for(j = 0;j<4;j++){
 				for(i = 0;i < 4;i++){
 					if(block[i][j]>0){
@@ -266,7 +258,6 @@ void cal_block(int direction){
 				k = 0;
 				x = 0;
 			}
-			draw_block();
 			break;
 
 	}
@@ -295,29 +286,34 @@ void update(){
 			a[i] /= 114.85f;
 		}
 	}
-	fio_printf(1,"a[0] = %d\r\n",a[0]);
-	fio_printf(1,"a[1] = %d\r\n",a[1]);
 	draw_block();
-	if(a[0]>200){//down
+	if(a[0]>250){//down
+		fio_printf(1,"down!\r\n");
 		cal_block(1);
 		random_gen_block();
-		vTaskDelay(2);
 		draw_block();
-	}else if(a[0]<-200){ //up
+		vTaskDelay(5);
+	}
+	if(a[0]<-250){ //up
+		fio_printf(1,"up!\r\n");
 		cal_block(2);
 		random_gen_block();
-		vTaskDelay(2);
 		draw_block();
-	}else if(a[1]>200){//right
+		vTaskDelay(5);
+	}
+	if(a[1]>250){//right
+		fio_printf(1,"right!\r\n");
 		cal_block(3);
 		random_gen_block();
-		vTaskDelay(2);
 		draw_block();
-	}else if(a[1]<-200){//left
+		vTaskDelay(5);
+	}
+	if(a[1]<-250){//left
+		fio_printf(1,"left!\r\n");
 		cal_block(4);
 		random_gen_block();
-		vTaskDelay(2);
 		draw_block();
+		vTaskDelay(5);
 	}
 	
 }
