@@ -12,12 +12,15 @@
 int16_t width = LCD_PIXEL_WIDTH/4;
 int16_t height = LCD_PIXEL_WIDTH/4;
 int block[4][4] = {0};
+int blocktmp[4][4] = {0};
 int layer = 1;
 int pos1_x;
 int pos1_y;
 int pos2_x;
 int pos2_y;
 int score = 0;
+int scoretmp = 0;
+int flag = 0;
 void init(){
 	L3GD20_InitTypeDef L3GD20_InitStructure;
 	L3GD20_InitStructure.Power_Mode = L3GD20_MODE_ACTIVE;
@@ -63,6 +66,7 @@ void blockInit(){
 	for(int i = 0 ;i < 4;i++){
 		for(int j = 0 ; j < 4;j++){
 			fio_printf(1,"%d ",block[i][j]);
+			blocktmp[i][j] = block[i][j];
 		}
 		fio_printf(1,"\r\n");
 	}
@@ -111,9 +115,12 @@ void random_gen_block(){
 	fio_printf(1,"n = %d \r\n",n);
 	fio_printf(1,"n_x = %d n_y = %d \r\n",n_x,n_y);
 	fio_printf(1,"block = %d\r\n",block[n_x][n_y]);
-	block[n_x][n_y] = 2;
+	if(n%2 == 0)
+		block[n_x][n_y] = 2;
+	else
+		block[n_x][n_y] = 4;
 }
-static char* itoa(int value, char* result, int base)
+static char* itoa1(int value, char* result, int base)
 {
 	if (base < 2 || base > 36) {
 		*result = '\0';
@@ -144,9 +151,9 @@ void draw_block(){
 	LCD_SetTextColor(LCD_COLOR_RED);
 	LCD_DisplayStringLine(LCD_LINE_0,"     2048");
 	char str[16] = "   SCORE:";
-	itoa(score,str+9,10);
+	itoa1(score,str+9,10);
 	LCD_DisplayStringLine(LCD_LINE_1,str);
-	
+		
 	for(int i = 0 ; i < 4;i++){
 		for(int j = 0 ; j < 4;j++){
 			if(block[i][j]>0){
@@ -162,8 +169,27 @@ void draw_block(){
 					tmp/=10;
 					itr++;
 				}
+				if(block[i][j]==128)
+					flag = 1;
+				else if(block[i][j]==1024)
+					flag = 2;
+				else if(block[i][j] == 2048)
+					flag = 3;
 			}
 		}
+	}
+	if(flag == 1){
+		LCD_SetBackColor(LCD_COLOR_BLACK);
+		LCD_SetTextColor(LCD_COLOR_BLUE);
+		LCD_DisplayStringLine(LCD_LINE_2,"keep going!");
+	}else if(flag == 2){
+		LCD_SetBackColor(LCD_COLOR_BLACK);
+		LCD_SetTextColor(LCD_COLOR_BLUE);
+		LCD_DisplayStringLine(LCD_LINE_2,"almost done!");
+	}else if(flag ==3){
+		LCD_SetBackColor(LCD_COLOR_BLACK);
+		LCD_SetTextColor(LCD_COLOR_BLUE);
+		LCD_DisplayStringLine(LCD_LINE_2,"ya good job!");
 	}
 	LCD_SetBackColor(LCD_COLOR_BLACK);
 	LCD_SetTextColor(LCD_COLOR_RED);
@@ -211,6 +237,7 @@ void cal_block(int direction){
 				x = 0;
 				k = 0;
 			}
+			
 			break;
 		case 2://up
 			for(i = 0;i<4;i++){
@@ -240,6 +267,7 @@ void cal_block(int direction){
 				x = 0;
 				k = 0;
 			}
+			
 			break;
 
 		case 3://right
@@ -270,6 +298,7 @@ void cal_block(int direction){
 				k = 0;
 				x = 0;
 			}
+			
 			break;
 
 		case 4://left
@@ -300,9 +329,19 @@ void cal_block(int direction){
 				k = 0;
 				x = 0;
 			}
+			
 			break;
 
 	}
+}
+void undo(){
+	for(int m = 0 ; m < 4;m++){
+		for(int n = 0;n < 4;n++){
+			block[m][n] = blocktmp[m][n];
+			score = scoretmp;
+		}
+	}
+
 }
 
 void update(){
@@ -330,6 +369,12 @@ void update(){
 	}
 	draw_block();
 	if(a[0]>250){//down
+		for(int m = 0;m<4;m++){
+			for(int n = 0 ; n <4;n++){
+				blocktmp[m][n] = block[m][n];
+			}
+		}
+		scoretmp = score;
 		fio_printf(1,"down!\r\n");
 		cal_block(1);
 		random_gen_block();
@@ -337,6 +382,12 @@ void update(){
 		vTaskDelay(5);
 	}
 	if(a[0]<-250){ //up
+		for(int m = 0;m<4;m++){
+			for(int n = 0 ; n <4;n++){
+				blocktmp[m][n] = block[m][n];
+			}
+		}
+		scoretmp = score;
 		fio_printf(1,"up!\r\n");
 		cal_block(2);
 		random_gen_block();
@@ -344,6 +395,12 @@ void update(){
 		vTaskDelay(5);
 	}
 	if(a[1]>250){//right
+		for(int m = 0;m<4;m++){
+			for(int n = 0 ; n <4;n++){
+				blocktmp[m][n] = block[m][n];
+			}
+		}
+		scoretmp = score;
 		fio_printf(1,"right!\r\n");
 		cal_block(3);
 		random_gen_block();
@@ -351,9 +408,21 @@ void update(){
 		vTaskDelay(5);
 	}
 	if(a[1]<-250){//left
+		for(int m = 0;m<4;m++){
+			for(int n = 0 ; n <4;n++){
+				blocktmp[m][n] = block[m][n];
+			}
+		}
+		scoretmp = score;
 		fio_printf(1,"left!\r\n");
 		cal_block(4);
 		random_gen_block();
+		draw_block();
+		vTaskDelay(5);
+	}
+	if(a[2] > 200){//undo
+		fio_printf(1,"undo\r\n");
+		undo();
 		draw_block();
 		vTaskDelay(5);
 	}

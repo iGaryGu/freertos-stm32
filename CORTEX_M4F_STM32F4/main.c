@@ -94,8 +94,6 @@ prvInit()
      LCD_SetTextColor( LCD_COLOR_WHITE );
 }
 
-
-
 void Game(void *pvParameter){
 	init();
 	blockInit();
