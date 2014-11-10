@@ -10,15 +10,14 @@
 
 //block
 int16_t width = LCD_PIXEL_WIDTH/4;
-int16_t height = LCD_PIXEL_HEIGHT/4;
-int16_t xpos = 40;
-int16_t ypos = 30;
+int16_t height = LCD_PIXEL_WIDTH/4;
 int block[4][4] = {0};
 int layer = 1;
 int pos1_x;
 int pos1_y;
 int pos2_x;
 int pos2_y;
+int score = 0;
 void init(){
 	L3GD20_InitTypeDef L3GD20_InitStructure;
 	L3GD20_InitStructure.Power_Mode = L3GD20_MODE_ACTIVE;
@@ -114,24 +113,63 @@ void random_gen_block(){
 	fio_printf(1,"block = %d\r\n",block[n_x][n_y]);
 	block[n_x][n_y] = 2;
 }
+static char* itoa(int value, char* result, int base)
+{
+	if (base < 2 || base > 36) {
+		*result = '\0';
+		return result;
+	}
+	char *ptr = result, *ptr1 = result, tmp_char;
+	int tmp_value;
+
+	do {
+		tmp_value = value;
+		value /= base;
+		*ptr++ = "zyxwvutsrqponmlkjihgfedcba9876543210123456789abcdefghijklmnopqrstuvwxyz" [35 + (tmp_value     - value * base)];
+	} while (value);
+
+	if (tmp_value < 0) *ptr++ = '-';
+	*ptr-- = '\0';
+	while (ptr1 < ptr) {
+		tmp_char = *ptr;
+		*ptr-- = *ptr1;
+		*ptr1++ = tmp_char;
+	}
+	return result;
+}
+
 
 void draw_block(){
+	LCD_SetBackColor(LCD_COLOR_BLACK);
+	LCD_SetTextColor(LCD_COLOR_RED);
+	LCD_DisplayStringLine(LCD_LINE_0,"     2048");
+	char str[16] = "   SCORE:";
+	itoa(score,str+9,10);
+	LCD_DisplayStringLine(LCD_LINE_1,str);
+	
 	for(int i = 0 ; i < 4;i++){
 		for(int j = 0 ; j < 4;j++){
 			if(block[i][j]>0){
+				LCD_SetBackColor(LCD_COLOR_WHITE);
 				LCD_SetTextColor(LCD_COLOR_WHITE);
-				LCD_DrawFullRect(i*60,j*80,width,height);
+				LCD_DrawFullRect(i*60,j*60+80,width,height);
 				LCD_SetTextColor(LCD_COLOR_RED);
 				int tmp = block[i][j];
 				int prefix = 15;
 				int itr = 0;
 				while(tmp>0){
-					LCD_DisplayChar(j*80+40,i*60+40-prefix*itr,tmp%10+48);
+					LCD_DisplayChar(j*60+20+80,i*60+40-prefix*itr,tmp%10+48);
 					tmp/=10;
 					itr++;
 				}
 			}
 		}
+	}
+	LCD_SetBackColor(LCD_COLOR_BLACK);
+	LCD_SetTextColor(LCD_COLOR_RED);
+	for(int i = 0 ;i < 5;i++){
+		LCD_DrawLine(0,i*60+80,LCD_PIXEL_WIDTH,LCD_DIR_HORIZONTAL);
+		LCD_DrawLine(i*60,80,LCD_PIXEL_WIDTH,LCD_DIR_VERTICAL);
 	}
 }
 
@@ -157,6 +195,7 @@ void cal_block(int direction){
 				for(w = k-1;w>=0;w--){
 					if(w-1>=0 && tmp[w]==tmp[w-1]){
 						new[x] = tmp[w]*2;
+						score+= tmp[w]*2;
 						w = w-1;
 						x++;
 					}else{
@@ -185,6 +224,7 @@ void cal_block(int direction){
 				for(w = 0;w < k;w++){
 					if(w+1<=k && tmp[w]==tmp[w+1]){
 						new[x] = tmp[w]*2;
+						score += tmp[w]*2;
 						w = w+1;
 						x++;
 					}else{
@@ -214,6 +254,7 @@ void cal_block(int direction){
 				for(w = k-1;w>=0;w--){
 					if(w-1>=0 && tmp[w]==tmp[w-1]){
 						new[x] = tmp[w]*2;
+						score += tmp[w]*2;
 						w = w-1;
 						x++;
 					}else{
@@ -243,6 +284,7 @@ void cal_block(int direction){
 				for(w =0;w < k;w++){
 					if(w+1<=k && tmp[w]==tmp[w+1]){
 						new[x] = tmp[w]*2;
+						score += tmp[w]*2;
 						w = w+1;
 						x++;
 					}else{
